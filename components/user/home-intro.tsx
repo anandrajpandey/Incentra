@@ -4,15 +4,27 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { IncentraEye } from '@/components/shared/incentra-eye'
 
+const INTRO_SESSION_KEY = 'incentra.home-intro.seen'
+
 interface HomeIntroProps {
   onComplete?: () => void
 }
 
 export function HomeIntro({ onComplete }: HomeIntroProps) {
-  const [visible, setVisible] = useState(true)
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    if (window.sessionStorage.getItem(INTRO_SESSION_KEY) === '1') {
+      onComplete?.()
+      return
+    }
+
+    setVisible(true)
+
     const timer = window.setTimeout(() => {
+      window.sessionStorage.setItem(INTRO_SESSION_KEY, '1')
       setVisible(false)
       window.setTimeout(() => onComplete?.(), 700)
     }, 3200)
