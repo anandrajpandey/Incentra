@@ -1,0 +1,23 @@
+<svg width="84" height="84" viewBox="0 0 84 84" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bucketBody" x1="42" y1="28" x2="42" y2="72" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8D1B16"/>
+      <stop offset="1" stop-color="#3A0908"/>
+    </linearGradient>
+    <linearGradient id="bucketStripe" x1="42" y1="28" x2="42" y2="72" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4D48B"/>
+      <stop offset="1" stop-color="#C58C46"/>
+    </linearGradient>
+    <radialGradient id="cornGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(41 18) rotate(90) scale(18 24)">
+      <stop stop-color="#FFF8E6"/>
+      <stop offset="1" stop-color="#E9C98E"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="42" cy="73" rx="20" ry="5" fill="black" fill-opacity=".28"/>
+  <path d="M26 29H58L54 68H30L26 29Z" fill="url(#bucketBody)" stroke="#9F3B30" stroke-width="1.5"/>
+  <path d="M33 29H39V68H33V29Z" fill="url(#bucketStripe)" fill-opacity=".9"/>
+  <path d="M45 29H51V68H45V29Z" fill="url(#bucketStripe)" fill-opacity=".9"/>
+  <path d="M38 24C35 16 24 16 23 24C18 20 10 24 12 31C14 37 24 36 27 33C28 38 35 40 40 35C45 39 53 39 56 33C60 38 69 37 72 31C75 24 66 19 61 24C60 17 49 16 46 24C43 20 41 20 38 24Z" fill="url(#cornGlow)"/>
+  <path d="M41 13C38 10 33 11 31 16C28 12 23 13 20 17C16 16 13 19 13 23" stroke="#FFF8E6" stroke-opacity=".45" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M56 16C59 12 64 13 66 17C70 16 73 19 72 23" stroke="#FFF8E6" stroke-opacity=".4" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

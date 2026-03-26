@@ -1,0 +1,8 @@
+aws_region      = "ap-south-1"
+aws_profile     = "default"
+project_name    = "streamflow"
+environment     = "dev"
+frontend_origin = "http://localhost:3000"
+admin_emails    = ["admin@example.com"]
+gemini_api_key = ""
+gemini_model   = "gemma-3-27b-it"

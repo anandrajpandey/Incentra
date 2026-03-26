@@ -1,0 +1,61 @@
+<svg width="320" height="180" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 80) rotate(90) scale(88 150)">
+      <stop offset="0" stop-color="#5B1016" stop-opacity="0.42"/>
+      <stop offset="0.34" stop-color="#2A1D22" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#0A0A0D" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="eyeShell" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 96) rotate(90) scale(68 124)">
+      <stop offset="0" stop-color="#383C43"/>
+      <stop offset="0.52" stop-color="#171A20"/>
+      <stop offset="1" stop-color="#05060A"/>
+    </radialGradient>
+    <radialGradient id="eyeBloom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 92) rotate(90) scale(48 108)">
+      <stop offset="0" stop-color="#6A7178" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#090A0D" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="iris" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 92) rotate(90) scale(46 46)">
+      <stop offset="0" stop-color="#FF8094"/>
+      <stop offset="0.28" stop-color="#FF4964"/>
+      <stop offset="0.62" stop-color="#E1182F"/>
+      <stop offset="1" stop-color="#481012"/>
+    </radialGradient>
+    <radialGradient id="pupil" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 92) rotate(90) scale(20 20)">
+      <stop offset="0" stop-color="#3B0C11"/>
+      <stop offset="1" stop-color="#08080B"/>
+    </radialGradient>
+    <linearGradient id="topArc" x1="160" y1="20" x2="160" y2="74" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D22D36" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#D22D36" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="irisGloss" x1="160" y1="44" x2="160" y2="92" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0.34"/>
+      <stop offset="0.52" stop-color="white" stop-opacity="0.08"/>
+      <stop offset="0.53" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="blurLarge" x="0" y="0" width="320" height="180" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <filter id="blurSoft" x="0" y="0" width="320" height="180" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="3.5"/>
+    </filter>
+  </defs>
+
+  <ellipse cx="160" cy="92" rx="145" ry="72" fill="url(#bgGlow)"/>
+  <path d="M18 96C46 48 95 22 160 22C225 22 274 48 302 96C274 144 225 170 160 170C95 170 46 144 18 96Z" stroke="#444852" stroke-opacity="0.38" stroke-width="1.1"/>
+  <path d="M34 96C58 56 102 34 160 34C218 34 262 56 286 96C262 136 218 158 160 158C102 158 58 136 34 96Z" stroke="#70747B" stroke-opacity="0.18" stroke-width="0.9"/>
+
+  <path d="M40 92C63 54 105 30 160 30C215 30 257 54 280 92C257 130 215 154 160 154C105 154 63 130 40 92Z" fill="url(#eyeShell)"/>
+  <path d="M40 92C63 54 105 30 160 30C215 30 257 54 280 92C257 130 215 154 160 154C105 154 63 130 40 92Z" stroke="#D5D8DD" stroke-opacity="0.68" stroke-width="1.8"/>
+  <path d="M40 92C63 54 105 30 160 30C215 30 257 54 280 92C257 130 215 154 160 154C105 154 63 130 40 92Z" fill="url(#eyeBloom)"/>
+
+  <ellipse cx="160" cy="92" rx="47" ry="47" fill="#1A1B20" stroke="#E2E5E8" stroke-opacity="0.82" stroke-width="1.8"/>
+  <ellipse cx="160" cy="92" rx="42" ry="42" fill="url(#iris)"/>
+  <path d="M118 92C123 75 140 62 160 62C180 62 197 75 202 92C196 84 180 79 160 79C140 79 124 84 118 92Z" fill="url(#irisGloss)"/>
+  <path d="M118 96C126 83 141 75 160 75C179 75 194 83 202 96L202 98C194 112 179 122 160 122C141 122 126 112 118 98V96Z" fill="#711016" fill-opacity="0.3"/>
+  <ellipse cx="160" cy="92" rx="18" ry="18" fill="url(#pupil)"/>
+
+  <path d="M78 40C110 16 210 16 242 40" stroke="url(#topArc)" stroke-opacity="0.9" stroke-width="3.8" stroke-linecap="round"/>
+  <ellipse cx="160" cy="97" rx="84" ry="25" fill="#0A0B0E" fill-opacity="0.58" filter="url(#blurLarge)"/>
+  <ellipse cx="160" cy="146" rx="74" ry="12" fill="#0A0B0E" fill-opacity="0.5" filter="url(#blurSoft)"/>
+</svg>
