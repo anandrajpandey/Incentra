@@ -13,15 +13,21 @@ interface HeroBannerProps {
   video: Video;
   kicker?: string;
   meta?: string[];
+  activatePreview?: boolean;
 }
 
-export function HeroBanner({ video, kicker, meta = [] }: HeroBannerProps) {
+export function HeroBanner({
+  video,
+  kicker,
+  meta = [],
+  activatePreview = true,
+}: HeroBannerProps) {
   const genre = getGenreByName(video.category);
   const previewRef = useRef<HTMLVideoElement>(null);
   const targetPreviewVolumeRef = useRef(0.26);
-  const previewMutedRef = useRef(true);
+  const previewMutedRef = useRef(false);
   const [previewReady, setPreviewReady] = useState(false);
-  const [previewMuted, setPreviewMuted] = useState(true);
+  const [previewMuted, setPreviewMuted] = useState(false);
   const isMkv = (video.sourceFormat || video.videoUrl).toLowerCase().includes("mkv");
   const previewStartTime = Math.min(
     Math.max(14, Math.round(video.duration * 0.46)),
@@ -40,8 +46,11 @@ export function HeroBanner({ video, kicker, meta = [] }: HeroBannerProps) {
 
   useEffect(() => {
     const node = previewRef.current;
-    if (isMkv || !node) {
+    if (isMkv || !node || !activatePreview) {
       setPreviewReady(false);
+      if (node) {
+        node.pause();
+      }
       return;
     }
 
@@ -108,7 +117,7 @@ export function HeroBanner({ video, kicker, meta = [] }: HeroBannerProps) {
       node.pause();
       node.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [isMkv, previewLength, previewStartTime, video.id]);
+  }, [activatePreview, isMkv, previewLength, previewStartTime, video.id]);
 
   const togglePreviewAudio = () => {
     const node = previewRef.current;

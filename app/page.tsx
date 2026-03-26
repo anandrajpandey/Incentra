@@ -56,6 +56,7 @@ export default function Home() {
           {!isLoading && discover?.spotlight && (
             <HeroBanner
               video={discover.spotlight}
+              activatePreview={introComplete}
               kicker={discover.profile.adaptiveMode === 'personalized' ? 'Picked For Tonight' : 'What To Watch'}
               meta={[
                 discover.profile.adaptiveMode === 'personalized' ? 'Chosen for you' : 'Crowd favorite',
