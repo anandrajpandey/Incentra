@@ -674,10 +674,19 @@ function sanitizeVideoForClient(video: VideoItem) {
   }
 }
 
-function sanitizeAdaptiveDiscoverForClient(discover: Awaited<ReturnType<typeof buildAdaptiveDiscover>>) {
+async function sanitizeAdaptiveDiscoverForClient(discover: Awaited<ReturnType<typeof buildAdaptiveDiscover>>) {
+  const spotlight = discover.spotlight ? sanitizeVideoForClient(discover.spotlight) : null
+  const signedSpotlight =
+    spotlight && spotlight.playbackType !== 'hls'
+      ? {
+          ...spotlight,
+          videoUrl: await signVideoFileUrl(spotlight),
+        }
+      : spotlight
+
   return {
     ...discover,
-    spotlight: discover.spotlight ? sanitizeVideoForClient(discover.spotlight) : null,
+    spotlight: signedSpotlight,
     rows: discover.rows.map((row) => ({
       ...row,
       videos: row.videos.map((video) => sanitizeVideoForClient(video)),
@@ -3168,14 +3177,14 @@ export async function handler(
       )
     }
 
-    if (method === 'GET' && path === '/discover') {
-      return response(
-        200,
-        sanitizeAdaptiveDiscoverForClient(
-          await buildAdaptiveDiscover(event.queryStringParameters?.userId)
+      if (method === 'GET' && path === '/discover') {
+        return response(
+          200,
+          await sanitizeAdaptiveDiscoverForClient(
+            await buildAdaptiveDiscover(event.queryStringParameters?.userId)
+          )
         )
-      )
-    }
+      }
 
     if (method === 'POST' && path === '/discover/signals') {
       const input = parseJson<DiscoverSignalInput>(event.body)
