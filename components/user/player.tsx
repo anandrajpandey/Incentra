@@ -15,11 +15,14 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { createPlaybackSession } from '@/services/api'
 import { parseSubtitleFile } from '@/services/subtitles'
 
 interface PlayerProps {
-  videoUrl: string
+  videoId?: string
+  videoUrl?: string
   title: string
+  playbackType?: 'file' | 'hls'
   sourceFormat?: string
   subtitleUrl?: string
   subtitleLabel?: string
@@ -40,8 +43,10 @@ const formatTime = (seconds: number) => {
 }
 
 export function Player({
+  videoId,
   videoUrl,
   title,
+  playbackType,
   sourceFormat,
   subtitleUrl,
   subtitleLabel,
@@ -55,6 +60,7 @@ export function Player({
 }: PlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [resolvedPlaybackUrl, setResolvedPlaybackUrl] = useState(videoUrl ?? '')
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [duration, setDuration] = useState(0)
@@ -67,7 +73,113 @@ export function Player({
   const [subtitleCues, setSubtitleCues] = useState<Array<{ start: number; end: number; text: string }>>([])
   const [captionsEnabled, setCaptionsEnabled] = useState(true)
 
-  const isMkv = (sourceFormat || videoUrl).toLowerCase().includes('mkv')
+  const isHls = playbackType === 'hls' || resolvedPlaybackUrl.toLowerCase().includes('.m3u8')
+  const isMkv = (sourceFormat || resolvedPlaybackUrl).toLowerCase().includes('mkv')
+
+  useEffect(() => {
+    setResolvedPlaybackUrl(videoUrl ?? '')
+  }, [videoUrl])
+
+  useEffect(() => {
+    if (!videoId || (!playbackType && videoUrl)) return
+
+    let cancelled = false
+    let blobUrl: string | null = null
+
+    const loadPlaybackSession = async () => {
+      try {
+        const session = await createPlaybackSession(videoId)
+        if (cancelled) return
+
+        if (session.manifestText) {
+          const manifestBlob = new Blob([session.manifestText], {
+            type: 'application/vnd.apple.mpegurl',
+          })
+          blobUrl = URL.createObjectURL(manifestBlob)
+          setResolvedPlaybackUrl(blobUrl)
+          return
+        }
+
+        setResolvedPlaybackUrl(session.playbackUrl ?? videoUrl ?? '')
+      } catch {
+        if (!cancelled) {
+          setResolvedPlaybackUrl(videoUrl ?? '')
+        }
+      }
+    }
+
+    void loadPlaybackSession()
+
+    return () => {
+      cancelled = true
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl)
+      }
+    }
+  }, [playbackType, videoId, videoUrl])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    let cancelled = false
+    let detachHls: (() => void) | null = null
+
+    const attachSource = async () => {
+      if (!resolvedPlaybackUrl) {
+        setPlayerError('No playback source is available for this title.')
+        return
+      }
+
+      setPlayerError(null)
+
+      if (!isHls) {
+        video.src = resolvedPlaybackUrl
+        video.load()
+        return
+      }
+
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = resolvedPlaybackUrl
+        video.load()
+        return
+      }
+
+      const { default: Hls } = await import('hls.js')
+      if (cancelled) return
+
+      if (!Hls.isSupported()) {
+        setPlayerError('This browser does not support HLS playback for this stream.')
+        return
+      }
+
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
+      })
+
+      hls.loadSource(resolvedPlaybackUrl)
+      hls.attachMedia(video)
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (!data.fatal) return
+        setPlayerError('The protected stream could not be loaded in this browser.')
+      })
+
+      detachHls = () => {
+        hls.destroy()
+      }
+    }
+
+    void attachSource()
+
+    return () => {
+      cancelled = true
+      detachHls?.()
+      video.pause()
+      video.removeAttribute('src')
+      video.load()
+    }
+  }, [isHls, resolvedPlaybackUrl])
 
   useEffect(() => {
     if (!showControls || !isPlaying) return
@@ -150,7 +262,7 @@ export function Player({
       video.removeEventListener('loadedmetadata', enableTrack)
       listeners.forEach(({ track, handler }) => track.removeEventListener('cuechange', handler))
     }
-  }, [captionsEnabled, videoUrl, subtitleUrl])
+  }, [captionsEnabled, resolvedPlaybackUrl, subtitleUrl])
 
   useEffect(() => {
     let cancelled = false
@@ -219,9 +331,11 @@ export function Player({
         setIsPlaying(true)
       } catch {
         setPlayerError(
-          isMkv
-            ? 'This MKV file is not supported by the current browser. Use MP4/WebM for reliable playback, or remux this title before uploading.'
-            : 'This video source is not supported by the current browser.'
+          isHls
+            ? 'This stream could not start in the current browser session.'
+            : isMkv
+              ? 'This MKV file is not supported by the current browser. Use MP4/WebM for reliable playback, or remux this title before uploading.'
+              : 'This video source is not supported by the current browser.'
         )
         setIsPlaying(false)
       }
@@ -283,7 +397,6 @@ export function Player({
     >
       <video
         ref={videoRef}
-        src={videoUrl}
         crossOrigin={subtitleUrl ? 'anonymous' : undefined}
         className="aspect-video w-full bg-black"
         onTimeUpdate={(event) => {
@@ -300,7 +413,9 @@ export function Player({
         onPlay={() => setIsPlaying(true)}
         onError={() =>
           setPlayerError(
-            isMkv
+            isHls
+              ? 'This stream could not be loaded by the current browser.'
+              : isMkv
               ? 'This browser may not support MKV playback directly. MP4/WebM is the reliable path, but embedded subtitle tracks will auto-enable here whenever the browser exposes them.'
               : 'This video could not be played in the current browser.'
           )
@@ -352,33 +467,25 @@ export function Player({
         )}
 
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
-          {(subtitleUrl || subtitleSource === 'embedded' || isMkv || playerError) && (
-            <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-white/72">
-              {subtitleUrl ? (
-                <span className="inline-flex items-center gap-2 border border-white/12 px-3 py-1.5">
-                  <Captions className="h-3.5 w-3.5 text-primary" />
-                  {subtitleLabel || 'English'} subtitles {subtitleLoadState === 'error' ? 'unavailable' : 'ready'}
-                </span>
-              ) : null}
-              {subtitleSource === 'embedded' ? (
-                <span className="inline-flex items-center gap-2 border border-white/12 px-3 py-1.5">
-                  <Captions className="h-3.5 w-3.5 text-primary" />
-                  Embedded subtitles: auto-select when available
-                </span>
-              ) : null}
+          {(subtitleUrl || subtitleSource === 'embedded' || isMkv || isHls || playerError) && (
+              <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-white/72">
+                {subtitleSource === 'embedded' ? (
+                  <span className="inline-flex items-center gap-2 border border-white/12 px-3 py-1.5">
+                    <Captions className="h-3.5 w-3.5 text-primary" />
+                    Embedded subtitles: auto-select when available
+                  </span>
+                ) : null}
               {isMkv ? (
                 <span className="inline-flex items-center gap-2 border border-white/12 px-3 py-1.5">
                   <AlertCircle className="h-3.5 w-3.5 text-primary" />
                   MKV playback depends on browser support
                 </span>
               ) : null}
-              {subtitleLoadState === 'error' ? (
-                <span className="text-red-200/90">
-                  Subtitle file is blocked by the CDN right now. Apply the CloudFront CORS update to make captions appear.
-                </span>
-              ) : null}
-              {playerError ? <span className="text-red-200/90">{playerError}</span> : null}
-            </div>
+                {subtitleLoadState === 'error' ? (
+                  <span className="text-red-200/90">Subtitles are unavailable right now.</span>
+                ) : null}
+                {playerError ? <span className="text-red-200/90">{playerError}</span> : null}
+              </div>
           )}
           <input
             type="range"

@@ -22,13 +22,16 @@ export function HeroBanner({
   meta = [],
   activatePreview = true,
 }: HeroBannerProps) {
+  const primaryPlaybackUrl = video.streamUrl ?? video.videoUrl ?? "";
   const genre = getGenreByName(video.category);
   const previewRef = useRef<HTMLVideoElement>(null);
   const targetPreviewVolumeRef = useRef(0.26);
   const previewMutedRef = useRef(false);
   const [previewReady, setPreviewReady] = useState(false);
   const [previewMuted, setPreviewMuted] = useState(false);
-  const isMkv = (video.sourceFormat || video.videoUrl).toLowerCase().includes("mkv");
+  const isHls = video.playbackType === "hls" || primaryPlaybackUrl.toLowerCase().includes(".m3u8");
+  const isMkv = (video.sourceFormat || primaryPlaybackUrl).toLowerCase().includes("mkv");
+  const canUsePreviewVideo = Boolean(primaryPlaybackUrl) && !isMkv && !isHls;
   const previewStartTime = Math.min(
     Math.max(14, Math.round(video.duration * 0.46)),
     Math.max(0, video.duration - 9),
@@ -46,7 +49,7 @@ export function HeroBanner({
 
   useEffect(() => {
     const node = previewRef.current;
-    if (isMkv || !node || !activatePreview) {
+    if (!canUsePreviewVideo || !node || !activatePreview) {
       setPreviewReady(false);
       if (node) {
         node.pause();
@@ -117,7 +120,7 @@ export function HeroBanner({
       node.pause();
       node.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [activatePreview, isMkv, previewLength, previewStartTime, video.id]);
+  }, [activatePreview, canUsePreviewVideo, previewLength, previewStartTime, video.id]);
 
   const togglePreviewAudio = () => {
     const node = previewRef.current;
@@ -155,10 +158,10 @@ export function HeroBanner({
           }`}
           priority
         />
-        {!isMkv ? (
+        {canUsePreviewVideo ? (
           <video
             ref={previewRef}
-            src={video.videoUrl}
+            src={primaryPlaybackUrl}
             poster={video.thumbnail}
             autoPlay
             muted={previewMuted}
@@ -171,7 +174,7 @@ export function HeroBanner({
         ) : null}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_25%,rgba(255,183,77,0.25),transparent_24%),linear-gradient(90deg,rgba(10,15,27,0.98),rgba(10,15,27,0.78)_42%,rgba(10,15,27,0.18)_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,8,12,0.08),rgba(6,8,12,0.44)_55%,rgba(6,8,12,0.82)_100%)]" />
-        {!isMkv ? (
+        {canUsePreviewVideo ? (
           <button
             type="button"
             onClick={togglePreviewAudio}

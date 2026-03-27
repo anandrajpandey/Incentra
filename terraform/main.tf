@@ -1,5 +1,10 @@
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
+  frontend_origins = distinct([
+    trimspace(var.frontend_origin),
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+  ])
 }
 
 resource "random_id" "suffix" {
@@ -48,7 +53,7 @@ resource "aws_s3_bucket_cors_configuration" "videos" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["PUT", "GET", "HEAD"]
-    allowed_origins = [var.frontend_origin]
+    allowed_origins = local.frontend_origins
     expose_headers  = ["ETag"]
     max_age_seconds = 3000
   }
@@ -77,7 +82,7 @@ resource "aws_cloudfront_response_headers_policy" "videos_cors" {
     }
 
     access_control_allow_origins {
-      items = [var.frontend_origin]
+      items = local.frontend_origins
     }
 
     access_control_expose_headers {
@@ -337,7 +342,7 @@ resource "aws_lambda_function" "api" {
       SUBTITLE_ANALYSES_TABLE_NAME = aws_dynamodb_table.subtitle_analyses.name
       UPLOAD_BUCKET_NAME       = aws_s3_bucket.videos.bucket
       CLOUDFRONT_DOMAIN        = "https://${aws_cloudfront_distribution.videos.domain_name}"
-      FRONTEND_ORIGIN          = var.frontend_origin
+      FRONTEND_ORIGIN          = join(",", local.frontend_origins)
       ADMIN_EMAILS             = join(",", var.admin_emails)
       AUTH_TOKEN_SECRET        = random_password.auth_secret.result
       GEMINI_API_KEY           = var.gemini_api_key
@@ -353,7 +358,7 @@ resource "aws_apigatewayv2_api" "http" {
   cors_configuration {
     allow_headers = ["content-type", "authorization"]
     allow_methods = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
-    allow_origins = [var.frontend_origin]
+    allow_origins = local.frontend_origins
   }
 }
 

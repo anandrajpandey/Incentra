@@ -53,6 +53,7 @@ export function UploadForm() {
     title: '',
     description: '',
     category: 'Action',
+    streamUrl: '',
     thumbnail: '',
     uploadedBy: 'Jordan Admin',
     isFeatured: false,
@@ -97,6 +98,7 @@ export function UploadForm() {
       title: '',
       description: '',
       category: 'Action',
+      streamUrl: '',
       thumbnail: '',
       uploadedBy: 'Jordan Admin',
       isFeatured: false,
@@ -106,8 +108,10 @@ export function UploadForm() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
 
-    if (!selectedFile) {
-      setError('Choose a video file before uploading.')
+    const normalizedStreamUrl = formData.streamUrl.trim()
+
+    if (!selectedFile && !normalizedStreamUrl) {
+      setError('Choose a video file or provide an HLS manifest URL before uploading.')
       return
     }
 
@@ -116,20 +120,33 @@ export function UploadForm() {
       return
     }
 
+    if (normalizedStreamUrl && !/\.m3u8($|[?#])/i.test(normalizedStreamUrl)) {
+      setError('Protected stream manifest URLs should point to a .m3u8 file.')
+      return
+    }
+
     setIsLoading(true)
     setStatus('uploading')
     setError(null)
 
     try {
-      const duration = await getVideoDuration(selectedFile)
-      const { uploadUrl, fileUrl } = await requestUploadUrl({
-        fileName: selectedFile.name,
-        fileType: selectedFile.type,
-      })
+      const duration = selectedFile ? await getVideoDuration(selectedFile) : 0
+      const playbackType = normalizedStreamUrl ? 'hls' : 'file'
+      const isExternalStreamUrl = /^https?:\/\//i.test(normalizedStreamUrl)
+      let playbackUrl: string | undefined
+      let videoObjectKey: string | undefined
 
-      await uploadFileToStorage(selectedFile, uploadUrl, setUploadProgress)
-      const playbackUrl =
-        uploadUrl === 'mock-upload-url' ? URL.createObjectURL(selectedFile) : fileUrl
+      if (!normalizedStreamUrl && selectedFile) {
+        const { uploadUrl, fileUrl, objectKey } = await requestUploadUrl({
+          fileName: selectedFile.name,
+          fileType: selectedFile.type,
+        })
+
+        await uploadFileToStorage(selectedFile, uploadUrl, setUploadProgress)
+        playbackUrl =
+          uploadUrl === 'mock-upload-url' ? URL.createObjectURL(selectedFile) : fileUrl
+        videoObjectKey = objectKey
+      }
 
       let subtitleUrl: string | undefined
       let subtitleLabel: string | undefined
@@ -181,11 +198,22 @@ export function UploadForm() {
         category: formData.category,
         thumbnail: thumbnailPreview,
         videoUrl: playbackUrl,
-        sourceFormat: selectedFile.name.split('.').pop()?.toLowerCase() || selectedFile.type,
+        videoObjectKey,
+        streamUrl: normalizedStreamUrl && isExternalStreamUrl ? normalizedStreamUrl : undefined,
+        hlsManifestKey:
+          normalizedStreamUrl && !isExternalStreamUrl ? normalizedStreamUrl : undefined,
+        playbackType,
+        sourceFormat: normalizedStreamUrl
+          ? 'hls'
+          : selectedFile?.name.split('.').pop()?.toLowerCase() || selectedFile?.type,
         subtitleUrl,
         subtitleLabel,
         subtitleLanguage,
-        subtitleSource: subtitleUrl ? 'external' : selectedFile.name.toLowerCase().endsWith('.mkv') ? 'embedded' : undefined,
+        subtitleSource: subtitleUrl
+          ? 'external'
+          : selectedFile?.name.toLowerCase().endsWith('.mkv')
+            ? 'embedded'
+            : undefined,
         companionBeats,
         subtitleContext,
         subtitleTranscript,
@@ -327,6 +355,24 @@ export function UploadForm() {
                     disabled={isLoading}
                     className="bg-secondary/40"
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-medium text-foreground">
+                    HLS manifest URL (recommended)
+                  </label>
+                  <Input
+                    value={formData.streamUrl}
+                    onChange={(event) =>
+                      setFormData((prev) => ({ ...prev, streamUrl: event.target.value }))
+                    }
+                    placeholder="https://cdn.example.com/title/master.m3u8"
+                    disabled={isLoading}
+                    className="bg-secondary/40"
+                  />
+                  <p className="mt-2 text-xs leading-6 text-foreground/55">
+                    Paste either a public `.m3u8` URL or a private manifest object key from your Incentra upload bucket.
+                  </p>
                 </div>
 
                 <div>

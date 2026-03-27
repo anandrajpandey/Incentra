@@ -461,7 +461,9 @@ export default function WatchPage() {
                   transition={{ duration: 0.4 }}
                 >
                   <Player
-                    videoUrl={video.videoUrl}
+                    videoId={video.id}
+                    videoUrl={video.streamUrl ?? video.videoUrl}
+                    playbackType={video.playbackType}
                     title={video.title}
                     sourceFormat={video.sourceFormat}
                     subtitleUrl={video.subtitleUrl}

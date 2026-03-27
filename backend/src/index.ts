@@ -3,7 +3,7 @@ import type {
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda'
 import { createHmac, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto'
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import {
   DeleteCommand,
@@ -14,7 +14,7 @@ import {
   ScanCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { getSignedUrl as getS3SignedUrl } from '@aws-sdk/s3-request-presigner'
 
 type VideoItem = {
   id: string
@@ -22,7 +22,11 @@ type VideoItem = {
   description: string
   category: string
   thumbnail: string
-  videoUrl: string
+  videoUrl?: string
+  videoObjectKey?: string
+  streamUrl?: string
+  hlsManifestKey?: string
+  playbackType?: 'file' | 'hls'
   sourceFormat?: string
   subtitleUrl?: string
   subtitleLabel?: string
@@ -153,7 +157,11 @@ type CreateVideoInput = {
   description: string
   category: string
   thumbnail: string
-  videoUrl: string
+  videoUrl?: string
+  videoObjectKey?: string
+  streamUrl?: string
+  hlsManifestKey?: string
+  playbackType?: 'file' | 'hls'
   sourceFormat?: string
   subtitleUrl?: string
   subtitleLabel?: string
@@ -200,6 +208,13 @@ type CreateCommentInput = {
 type UploadUrlInput = {
   fileName: string
   fileType: string
+}
+
+type PlaybackSessionItem = {
+  playbackType: 'file' | 'hls'
+  playbackUrl?: string
+  manifestText?: string
+  expiresAt: string
 }
 
 type DiscoverSignalInput = {
@@ -251,7 +266,10 @@ const subtitleAnalysesTableName =
   process.env.SUBTITLE_ANALYSES_TABLE_NAME || 'streamflow-subtitle-analyses'
 const bucketName = process.env.UPLOAD_BUCKET_NAME || 'streamflow-video-uploads'
 const cloudFrontDomain = process.env.CLOUDFRONT_DOMAIN?.replace(/\/+$/, '')
-const frontendOrigin = process.env.FRONTEND_ORIGIN || '*'
+const frontendOrigins = (process.env.FRONTEND_ORIGIN || '*')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean)
 const authTokenSecret = process.env.AUTH_TOKEN_SECRET || 'streamflow-local-auth-secret'
 const geminiApiKey = process.env.GEMINI_API_KEY
 const geminiModel = process.env.GEMINI_MODEL || 'gemma-3-27b-it'
@@ -267,6 +285,23 @@ const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region }),
   },
 })
 
+let currentRequestOriginHeader: string | undefined
+
+function resolveCorsOrigin() {
+  if (frontendOrigins.includes('*')) {
+    return '*'
+  }
+
+  if (
+    currentRequestOriginHeader &&
+    frontendOrigins.includes(currentRequestOriginHeader)
+  ) {
+    return currentRequestOriginHeader
+  }
+
+  return frontendOrigins[0] || '*'
+}
+
 function response(
   statusCode: number,
   body: unknown
@@ -275,7 +310,7 @@ function response(
     statusCode,
     headers: {
       'content-type': 'application/json',
-      'access-control-allow-origin': frontendOrigin,
+      'access-control-allow-origin': resolveCorsOrigin(),
       'access-control-allow-headers': 'content-type,authorization',
       'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS',
     },
@@ -299,6 +334,116 @@ function buildPlaybackUrl(objectKey: string) {
     return `${cloudFrontDomain}/${objectKey}`
   }
   return `https://${bucketName}.s3.${region}.amazonaws.com/${objectKey}`
+}
+
+function inferObjectKeyFromUrl(url?: string | null) {
+  if (!url) return null
+
+  try {
+    const parsed = new URL(url)
+    const key = parsed.pathname.replace(/^\/+/, '')
+    return key || null
+  } catch {
+    return null
+  }
+}
+
+function joinObjectKey(baseKey: string, relativePath: string) {
+  const normalizedBase = baseKey.replace(/\\/g, '/')
+  const baseParts = normalizedBase.split('/').slice(0, -1)
+
+  for (const segment of relativePath.split('/')) {
+    if (!segment || segment === '.') continue
+    if (segment === '..') {
+      baseParts.pop()
+      continue
+    }
+    baseParts.push(segment)
+  }
+
+  return baseParts.join('/')
+}
+
+async function readS3Text(objectKey: string) {
+  const result = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: bucketName,
+      Key: objectKey,
+    })
+  )
+
+  return result.Body?.transformToString() ?? ''
+}
+
+async function createSignedObjectUrl(objectKey: string, expiresIn = 300) {
+  return getS3SignedUrl(
+    s3Client,
+    new GetObjectCommand({
+      Bucket: bucketName,
+      Key: objectKey,
+    }),
+    { expiresIn }
+  )
+}
+
+async function signVideoFileUrl(video: VideoItem, expiresIn = 1800) {
+  const objectKey = video.videoObjectKey ?? inferObjectKeyFromUrl(video.videoUrl)
+  if (!objectKey) return video.videoUrl
+  return createSignedObjectUrl(objectKey, expiresIn)
+}
+
+async function signSubtitleFileUrl(video: VideoItem, expiresIn = 1800) {
+  const objectKey = inferObjectKeyFromUrl(video.subtitleUrl)
+  if (!objectKey) return video.subtitleUrl
+  return createSignedObjectUrl(objectKey, expiresIn)
+}
+
+async function rewriteHlsManifest(
+  manifestText: string,
+  manifestKey: string,
+  expiresIn = 300
+) {
+  const lines = manifestText.split(/\r?\n/)
+
+  const rewritten = await Promise.all(
+    lines.map(async (line) => {
+      const trimmed = line.trim()
+      if (!trimmed) return line
+
+      if (trimmed.startsWith('#')) {
+        if (!trimmed.includes('URI="')) {
+          return line
+        }
+
+        const replaced = await Promise.all(
+          Array.from(trimmed.matchAll(/URI="([^"]+)"/g)).map(async (match) => {
+            const candidate = match[1]
+            if (/^(https?:)?\/\//i.test(candidate) || candidate.startsWith('data:')) {
+              return match[0]
+            }
+            const objectKey = joinObjectKey(manifestKey, candidate)
+            const signedUrl = await createSignedObjectUrl(objectKey, expiresIn)
+            return `URI="${signedUrl}"`
+          })
+        )
+
+        let nextLine = line
+        Array.from(trimmed.matchAll(/URI="([^"]+)"/g)).forEach((match, index) => {
+          nextLine = nextLine.replace(match[0], replaced[index] ?? match[0])
+        })
+        return nextLine
+      }
+
+      if (/^(https?:)?\/\//i.test(trimmed)) {
+        return line
+      }
+
+      const objectKey = joinObjectKey(manifestKey, trimmed)
+      return await createSignedObjectUrl(objectKey, expiresIn)
+    })
+  )
+
+  return rewritten.join('\n')
 }
 
 function slugify(value: string) {
@@ -441,8 +586,13 @@ async function getVideo(id: string) {
   if (!item) return null
   const viewCounts = await getViewCountsByVideo()
   const merged = await mergeVideoWithSubtitleAnalysis(item)
+  const signedVideoUrl =
+    merged.playbackType === 'hls' ? merged.videoUrl : await signVideoFileUrl(merged)
+  const signedSubtitleUrl = merged.subtitleUrl ? await signSubtitleFileUrl(merged) : merged.subtitleUrl
   return {
     ...merged,
+    videoUrl: signedVideoUrl,
+    subtitleUrl: signedSubtitleUrl,
     views: Math.max(merged.views ?? 0, viewCounts[id] ?? 0),
   }
 }
@@ -502,6 +652,82 @@ async function mergeVideoWithSubtitleAnalysis(video: VideoItem) {
   }
 }
 
+function sanitizeVideoForClient(video: VideoItem) {
+  const base = {
+    ...video,
+    videoObjectKey: undefined,
+  }
+
+  if (video.playbackType === 'hls' || video.hlsManifestKey) {
+    return {
+      ...base,
+      videoUrl: undefined,
+      streamUrl: undefined,
+      videoObjectKey: undefined,
+      hlsManifestKey: undefined,
+    }
+  }
+
+  return {
+    ...base,
+    hlsManifestKey: undefined,
+  }
+}
+
+function sanitizeAdaptiveDiscoverForClient(discover: Awaited<ReturnType<typeof buildAdaptiveDiscover>>) {
+  return {
+    ...discover,
+    spotlight: discover.spotlight ? sanitizeVideoForClient(discover.spotlight) : null,
+    rows: discover.rows.map((row) => ({
+      ...row,
+      videos: row.videos.map((video) => sanitizeVideoForClient(video)),
+    })),
+  }
+}
+
+async function createPlaybackSession(video: VideoItem): Promise<PlaybackSessionItem> {
+  const expiresIn = 300
+  const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString()
+  const playbackType = video.playbackType ?? (video.streamUrl || video.hlsManifestKey ? 'hls' : 'file')
+
+  if (playbackType === 'hls') {
+    if (video.hlsManifestKey) {
+      const manifestText = await readS3Text(video.hlsManifestKey)
+      const signedManifestText = await rewriteHlsManifest(
+        manifestText,
+        video.hlsManifestKey,
+        expiresIn
+      )
+
+      return {
+        playbackType: 'hls',
+        manifestText: signedManifestText,
+        expiresAt,
+      }
+    }
+
+    return {
+      playbackType: 'hls',
+      playbackUrl: video.streamUrl,
+      expiresAt,
+    }
+  }
+
+  if (video.videoObjectKey) {
+    return {
+      playbackType: 'file',
+      playbackUrl: await createSignedObjectUrl(video.videoObjectKey, expiresIn),
+      expiresAt,
+    }
+  }
+
+  return {
+    playbackType: 'file',
+    playbackUrl: await signVideoFileUrl(video, expiresIn),
+    expiresAt,
+  }
+}
+
 async function createVideo(input: CreateVideoInput) {
   const item: VideoItem = {
     id: randomUUID(),
@@ -510,6 +736,10 @@ async function createVideo(input: CreateVideoInput) {
     category: input.category,
     thumbnail: input.thumbnail,
     videoUrl: input.videoUrl,
+    videoObjectKey: input.videoObjectKey,
+    streamUrl: input.streamUrl,
+    hlsManifestKey: input.hlsManifestKey,
+    playbackType: input.playbackType ?? (input.streamUrl || input.hlsManifestKey ? 'hls' : 'file'),
     sourceFormat: input.sourceFormat,
     subtitleUrl: input.subtitleUrl,
     subtitleLabel: input.subtitleLabel,
@@ -644,7 +874,7 @@ async function createUploadUrl(input: UploadUrlInput) {
     input.fileName
   )}`
 
-  const uploadUrl = await getSignedUrl(
+  const uploadUrl = await getS3SignedUrl(
     s3Client,
     new PutObjectCommand({
       Bucket: bucketName,
@@ -2883,6 +3113,7 @@ function getPathParts(path: string) {
 export async function handler(
   event: APIGatewayProxyEventV2
 ): Promise<APIGatewayProxyStructuredResultV2> {
+  currentRequestOriginHeader = event.headers.origin ?? event.headers.Origin
   const method = event.requestContext.http.method
   const path = event.rawPath
   const parts = getPathParts(path)
@@ -2929,11 +3160,21 @@ export async function handler(
     }
 
     if (method === 'GET' && path === '/videos') {
-      return response(200, await listVideos(event.queryStringParameters?.category))
+      return response(
+        200,
+        (await listVideos(event.queryStringParameters?.category)).map((video) =>
+          sanitizeVideoForClient(video)
+        )
+      )
     }
 
     if (method === 'GET' && path === '/discover') {
-      return response(200, await buildAdaptiveDiscover(event.queryStringParameters?.userId))
+      return response(
+        200,
+        sanitizeAdaptiveDiscoverForClient(
+          await buildAdaptiveDiscover(event.queryStringParameters?.userId)
+        )
+      )
     }
 
     if (method === 'POST' && path === '/discover/signals') {
@@ -2974,6 +3215,13 @@ export async function handler(
           ? response(200, analysis)
           : response(404, { message: 'Subtitle analysis not found' })
       }
+      if (parts[2] === 'playback-session') {
+        await requireAuthenticatedUser(event)
+        const video = await getVideo(id)
+        return video
+          ? response(200, await createPlaybackSession(video))
+          : response(404, { message: 'Video not found' })
+      }
       if (parts[2] === 'pulses') {
         const video = await getVideo(id)
         return video ? response(200, await buildScenePulses(video)) : response(404, { message: 'Video not found' })
@@ -2990,7 +3238,9 @@ export async function handler(
         )
       }
       const video = await getVideo(id)
-      return video ? response(200, video) : response(404, { message: 'Video not found' })
+      return video
+        ? response(200, sanitizeVideoForClient(video))
+        : response(404, { message: 'Video not found' })
     }
 
     if (method === 'POST' && path === '/upload-url') {
@@ -3011,12 +3261,17 @@ export async function handler(
 
     if (method === 'POST' && path === '/videos') {
       const input = parseJson<CreateVideoInput>(event.body)
-      if (!input.title || !input.description || !input.category || !input.videoUrl) {
+      if (
+        !input.title ||
+        !input.description ||
+        !input.category ||
+        (!input.videoUrl && !input.streamUrl && !input.hlsManifestKey)
+      ) {
         return response(400, {
-          message: 'title, description, category, and videoUrl are required',
+          message: 'title, description, category, and a playback source are required',
         })
       }
-      return response(201, await createVideo(input))
+      return response(201, sanitizeVideoForClient(await createVideo(input)))
     }
 
     if (method === 'POST' && parts[0] === 'videos' && parts[2] === 'companion' && parts[3] === 'chat') {
@@ -3056,7 +3311,9 @@ export async function handler(
       const id = parts[1]
       const patch = parseJson<Partial<VideoItem>>(event.body)
       const updated = await updateVideo(id, patch)
-      return updated ? response(200, updated) : response(404, { message: 'Video not found' })
+      return updated
+        ? response(200, sanitizeVideoForClient(updated))
+        : response(404, { message: 'Video not found' })
     }
 
     if (method === 'DELETE' && parts[0] === 'videos' && parts.length === 2) {

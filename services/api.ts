@@ -48,6 +48,7 @@ import type {
   SubtitleChunk,
   SubtitleSceneContext,
   SubtitleTranscriptCue,
+  PlaybackSessionResponse,
   UpdateVideoInput,
   UploadUrlRequest,
   UploadUrlResponse,
@@ -239,6 +240,24 @@ export async function createVideo(input: CreateVideoInput): Promise<Video> {
   return withMockFallback(
     () => request<Video>('/videos', { method: 'POST', body: input }),
     () => createMockVideo(input)
+  )
+}
+
+export async function createPlaybackSession(videoId: string): Promise<PlaybackSessionResponse> {
+  return withMockFallback(
+    () => request<PlaybackSessionResponse>(`/videos/${videoId}/playback-session`),
+    async () => {
+      const video = await getVideoById(videoId)
+      if (!video) {
+        throw new Error('Video not found')
+      }
+
+      return {
+        playbackType: video.playbackType ?? (video.streamUrl ? 'hls' : 'file'),
+        playbackUrl: video.streamUrl ?? video.videoUrl,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      }
+    }
   )
 }
 

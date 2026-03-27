@@ -6,7 +6,11 @@ export interface Video {
   description: string
   category: string
   thumbnail: string
-  videoUrl: string
+  videoUrl?: string
+  videoObjectKey?: string
+  streamUrl?: string
+  hlsManifestKey?: string
+  playbackType?: 'file' | 'hls'
   sourceFormat?: string
   subtitleUrl?: string
   subtitleLabel?: string
@@ -177,7 +181,11 @@ export interface CreateVideoInput {
   title: string
   description: string
   category: string
-  videoUrl: string
+  videoUrl?: string
+  videoObjectKey?: string
+  streamUrl?: string
+  hlsManifestKey?: string
+  playbackType?: 'file' | 'hls'
   sourceFormat?: string
   thumbnail: string
   subtitleUrl?: string
@@ -199,6 +207,11 @@ export interface UpdateVideoInput {
   description?: string
   category?: string
   thumbnail?: string
+  videoUrl?: string
+  videoObjectKey?: string
+  streamUrl?: string
+  hlsManifestKey?: string
+  playbackType?: 'file' | 'hls'
   isFeatured?: boolean
   likes?: number
   subtitleUrl?: string
@@ -255,6 +268,13 @@ export interface CompanionChatRequest {
 export interface CompanionChatResponse {
   reply: CompanionMessage
   activeBeat?: CompanionBeat | null
+}
+
+export interface PlaybackSessionResponse {
+  playbackType: 'file' | 'hls'
+  playbackUrl?: string
+  manifestText?: string
+  expiresAt: string
 }
 
 export interface AdminStats {
