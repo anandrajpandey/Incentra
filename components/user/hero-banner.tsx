@@ -133,7 +133,7 @@ export function HeroBanner({
     targetPreviewVolumeRef.current = nextMuted ? 0 : 0.26;
     node.volume = nextMuted ? 0 : 0.1;
 
-    if (node.paused) {
+    if (!nextMuted && node.paused) {
       void node.play().catch(() => {
         node.muted = true;
         setPreviewMuted(true);
