@@ -26,9 +26,9 @@ export function HeroBanner({
   const genre = getGenreByName(video.category);
   const previewRef = useRef<HTMLVideoElement>(null);
   const targetPreviewVolumeRef = useRef(0.26);
-  const previewMutedRef = useRef(false);
+  const previewMutedRef = useRef(true);
   const [previewReady, setPreviewReady] = useState(false);
-  const [previewMuted, setPreviewMuted] = useState(false);
+  const [previewMuted, setPreviewMuted] = useState(true);
   const isHls = video.playbackType === "hls" || primaryPlaybackUrl.toLowerCase().includes(".m3u8");
   const isMkv = (video.sourceFormat || primaryPlaybackUrl).toLowerCase().includes("mkv");
   const canUsePreviewVideo = Boolean(primaryPlaybackUrl) && !isMkv && !isHls;
