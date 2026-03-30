@@ -452,7 +452,7 @@ export default function WatchPage() {
           </div>
         ) : video ? (
           <>
-            <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="grid gap-6 sm:gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
               <div>
                 <motion.div
                   ref={playerSectionRef}
@@ -488,19 +488,19 @@ export default function WatchPage() {
                   transition={{ duration: 0.4, delay: 0.12 }}
                   className="mt-8 border-b border-white/10 pb-8"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.35em] text-primary/70">
-                        Now Streaming
-                      </p>
-                      <h1 className="mt-2 text-5xl text-foreground" data-display="true">
-                        {video.title}
-                      </h1>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
+                    <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.35em] text-primary/70">
+                          Now Streaming
+                        </p>
+                        <h1 className="mt-2 text-3xl text-foreground sm:text-5xl" data-display="true">
+                          {video.title}
+                        </h1>
+                      </div>
+                      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                        <Button
+                          variant="outline"
+                          size="sm"
                         onClick={handleToggleLike}
                         disabled={isUpdatingLike}
                         className={isLiked ? 'border-red-300/30 bg-red-500/10 text-white' : ''}
@@ -519,7 +519,7 @@ export default function WatchPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 grid gap-x-6 gap-y-4 text-sm text-foreground/65 md:grid-cols-3">
+                    <div className="mt-6 grid gap-x-6 gap-y-4 text-sm text-foreground/65 sm:grid-cols-2 md:grid-cols-3">
                     <div>
                       <ThumbsUp className="mb-2 h-4 w-4 text-primary" />
                       {displayLikes.toLocaleString()} likes
@@ -563,9 +563,9 @@ export default function WatchPage() {
                     transition={{ duration: 0.4, delay: 0.24 }}
                     className="mt-10"
                   >
-                    <h3 className="mb-6 text-3xl text-foreground" data-display="true">
-                      More To Explore
-                    </h3>
+                      <h3 className="mb-6 text-2xl text-foreground sm:text-3xl" data-display="true">
+                        More To Explore
+                      </h3>
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                       {relatedVideos.map((v, i) => (
                         <VideoCard key={v.id} video={v} index={i} />

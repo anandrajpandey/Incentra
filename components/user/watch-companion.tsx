@@ -12,7 +12,7 @@ import type { CompanionMessage } from '@/types'
 export function WatchCompanionUnavailable() {
   return (
     <div className="space-y-5 border-b border-white/10 pb-8 text-white">
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
         <div className="relative shrink-0 opacity-90 scale-[1.08]">
           <IncentraEye mode="idle" size="compact" restingLook="left" />
           <div className="absolute -bottom-1 -right-1">
@@ -27,7 +27,7 @@ export function WatchCompanionUnavailable() {
         </div>
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-red-200/60">Second Seat</p>
-          <h3 className="mt-2 text-3xl text-white" data-display="true">
+          <h3 className="mt-2 text-2xl text-white sm:text-3xl" data-display="true">
             No CC, No Commentary
           </h3>
           <p className="mt-2 text-sm leading-7 text-white/62">
@@ -88,7 +88,7 @@ export function WatchCompanion({
 
   return (
     <div className="space-y-5 border-b border-white/10 pb-8 text-white">
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
         <div className="relative shrink-0 opacity-90 scale-[1.08]">
           <IncentraEye mode="idle" size="compact" restingLook="left" />
           <div className="absolute -bottom-1 -right-1">
@@ -103,7 +103,7 @@ export function WatchCompanion({
         </div>
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-red-200/60">Second Seat</p>
-          <h3 className="mt-2 text-3xl text-white" data-display="true">
+          <h3 className="mt-2 text-2xl text-white sm:text-3xl" data-display="true">
             Watch Companion
           </h3>
           <p className="mt-2 text-sm leading-7 text-white/62">
@@ -129,7 +129,7 @@ export function WatchCompanion({
             </div>
           </div>
 
-          <div ref={threadRef} className="themed-scrollbar max-h-[380px] space-y-3 overflow-auto bg-black/10 px-4 py-4">
+          <div ref={threadRef} className="themed-scrollbar max-h-[320px] space-y-3 overflow-auto bg-black/10 px-4 py-4 sm:max-h-[380px]">
           {messages.length === 0 ? (
             <div className="text-sm leading-7 text-white/56">
               Ask things like `what just happened`, `who do you trust here`, or `what do you think happens next`.
@@ -143,7 +143,7 @@ export function WatchCompanion({
                   animate={{ opacity: 1, y: 0 }}
                   className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
                 >
-                  <div className={`max-w-[90%] ${message.role === 'assistant' ? 'items-start' : 'items-end'} flex flex-col gap-1`}>
+                  <div className={`max-w-full sm:max-w-[90%] ${message.role === 'assistant' ? 'items-start' : 'items-end'} flex flex-col gap-1`}>
                     <p className="text-[11px] uppercase tracking-[0.24em] text-white/32">
                       {message.role === 'assistant' ? 'Second Seat' : 'You'}
                     </p>
@@ -198,14 +198,14 @@ export function WatchCompanion({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
           <Input
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Ask what that scene meant..."
             className="h-12 border-white/10 bg-white/5 text-white placeholder:text-white/28"
           />
-          <Button type="submit" disabled={isThinking || !draft.trim()} className="h-12 px-4">
+          <Button type="submit" disabled={isThinking || !draft.trim()} className="h-12 px-4 sm:w-auto">
             <Send className="h-4 w-4" />
           </Button>
         </form>

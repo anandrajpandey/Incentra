@@ -25,7 +25,7 @@ export function ScenePulse({ pulses, duration, currentTime, onJump }: ScenePulse
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-red-200/60">Scene Pulse</p>
-          <h3 className="mt-2 text-3xl" data-display="true">
+          <h3 className="mt-2 text-2xl sm:text-3xl" data-display="true">
             Narrative Beat Map
           </h3>
         </div>

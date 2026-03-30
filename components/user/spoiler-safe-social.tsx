@@ -75,7 +75,7 @@ export function SpoilerSafeSocial({
         <p className="text-xs uppercase tracking-[0.35em] text-red-200/60">
           Reactions
         </p>
-        <h3 className="mt-2 text-3xl" data-display="true">
+        <h3 className="mt-2 text-2xl sm:text-3xl" data-display="true">
           Spoiler-Safe Social
         </h3>
         <p className="mt-3 text-sm leading-7 text-white/58">
@@ -85,7 +85,7 @@ export function SpoilerSafeSocial({
 
       <form
         onSubmit={handleSubmit}
-        className="mt-6 rounded-[28px] border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-sm"
+        className="mt-6 rounded-[28px] border border-white/10 bg-white/[0.03] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:p-5"
       >
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
           <input
@@ -112,7 +112,7 @@ export function SpoilerSafeSocial({
           className="mt-4 min-h-28 w-full rounded-[24px] border border-white/12 bg-black/20 px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-white/26"
         />
         <div className="mt-4 space-y-3 text-sm text-white/68">
-          <label className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.02] px-3 py-2">
+          <label className="inline-flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.02] px-3 py-2 sm:w-auto sm:rounded-full">
             <input
               type="checkbox"
               checked={containsSpoilers}
@@ -121,7 +121,7 @@ export function SpoilerSafeSocial({
             />
             Hide this reaction behind a spoiler shield
           </label>
-          <label className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.02] px-3 py-2">
+          <label className="inline-flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.02] px-3 py-2 sm:w-auto sm:rounded-full">
             <input
               type="checkbox"
               checked={attachTimestamp}

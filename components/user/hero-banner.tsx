@@ -178,7 +178,7 @@ export function HeroBanner({
           <button
             type="button"
             onClick={togglePreviewAudio}
-            className="absolute bottom-36 right-4 z-20 text-white/78 transition hover:text-white sm:right-6 md:bottom-36 md:right-10 lg:bottom-36 lg:right-14 2xl:bottom-36 2xl:right-20"
+            className="absolute bottom-24 right-4 z-20 text-white/78 transition hover:text-white sm:right-6 md:bottom-36 md:right-10 lg:bottom-36 lg:right-14 2xl:bottom-36 2xl:right-20"
             aria-label={previewMuted ? "Unmute preview" : "Mute preview"}
           >
             {previewMuted ? (
@@ -189,49 +189,49 @@ export function HeroBanner({
           </button>
         ) : null}
 
-        <div className="relative z-10 flex min-h-[calc(100vh-4rem)] items-end px-4 py-10 sm:px-6 md:px-10 lg:px-14 2xl:px-20">
-          <div className="max-w-2xl pb-24">
+        <div className="relative z-10 flex min-h-[calc(100vh-4rem)] items-end px-4 py-8 sm:px-6 sm:py-10 md:px-10 lg:px-14 2xl:px-20">
+          <div className="max-w-2xl pb-20 sm:pb-24">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs uppercase tracking-[0.35em] text-primary">
               <Sparkles className="h-3.5 w-3.5" />
               Featured Premiere
             </div>
 
             <h1
-              className="max-w-xl text-6xl leading-none text-white md:text-7xl"
+              className="max-w-xl text-4xl leading-none text-white sm:text-5xl md:text-7xl"
               data-display="true"
             >
               {video.title}
             </h1>
-            <p className="mt-2 max-w-xl text-base leading-7 text-white/80">
+            <p className="mt-2 max-w-xl text-sm leading-7 text-white/80 sm:text-base">
               {video.description}
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-white/70">
+            <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-white/70 sm:mt-6 sm:gap-4 sm:text-sm">
               <span>{video.likes.toLocaleString()} likes</span>
               <span>{Math.ceil(video.duration / 60)} min runtime</span>
             </div>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link href={`/watch/${video.id}`}>
-                <Button size="lg" className="gap-2">
+            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-4">
+              <Link href={`/watch/${video.id}`} className="w-full sm:w-auto">
+                <Button size="lg" className="w-full gap-2 sm:w-auto">
                   <Play className="h-5 w-5 fill-current" />
                   Watch now
                 </Button>
               </Link>
               {genre ? (
-                <Link href={`/genre/${genre.slug}`}>
+                <Link href={`/genre/${genre.slug}`} className="w-full sm:w-auto">
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+                    className="w-full border-white/20 bg-white/5 text-white hover:bg-white/10 sm:w-auto"
                   >
                     Explore {genre.name}
                   </Button>
                 </Link>
               ) : (
-                <a href="#catalog">
+                <a href="#catalog" className="w-full sm:w-auto">
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+                    className="w-full border-white/20 bg-white/5 text-white hover:bg-white/10 sm:w-auto"
                   >
                     Browse rows
                   </Button>
@@ -241,19 +241,19 @@ export function HeroBanner({
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-5 sm:px-6 md:px-10 lg:px-14 2xl:px-20">
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-4 sm:px-6 sm:pb-5 md:px-10 lg:px-14 2xl:px-20">
           <div className="flex flex-col gap-4 border-t border-white/10 pt-5 text-white md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.35em] text-red-200/70">
                 {kicker ?? "Picked For Tonight"}
               </p>
-              <p className="mt-2 max-w-xl text-sm leading-7 text-white/62">
+              <p className="mt-2 max-w-xl text-xs leading-6 text-white/62 sm:text-sm sm:leading-7">
                 A strong first watch for tonight, with a mood that carries from
                 the opening frame through the late-hour finish.
               </p>
             </div>
             {meta.length ? (
-              <div className="flex flex-wrap gap-6 text-sm text-white/70">
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/70 sm:gap-6 sm:text-sm">
                 {meta.map((item) => (
                   <span key={item}>{item}</span>
                 ))}

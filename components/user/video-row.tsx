@@ -46,7 +46,7 @@ export function VideoRow({ title, subtitle, videos }: VideoRowProps) {
     >
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-3xl text-foreground" data-display="true">
+          <h2 className="text-2xl text-foreground sm:text-3xl" data-display="true">
             {title}
           </h2>
           {subtitle ? <p className="mt-1 text-sm text-foreground/60">{subtitle}</p> : null}
@@ -72,10 +72,10 @@ export function VideoRow({ title, subtitle, videos }: VideoRowProps) {
         <div
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="scrollbar-hide flex gap-5 overflow-x-auto pb-2"
+          className="scrollbar-hide flex gap-4 overflow-x-auto pb-2 pr-4 sm:gap-5"
         >
           {videos.map((video, index) => (
-            <div key={video.id} className="w-[280px] min-w-[280px] md:w-[320px] md:min-w-[320px]">
+            <div key={video.id} className="w-[78vw] min-w-[78vw] sm:w-[280px] sm:min-w-[280px] md:w-[320px] md:min-w-[320px]">
               <VideoCard video={video} index={index} />
             </div>
           ))}
