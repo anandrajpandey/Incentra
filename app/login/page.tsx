@@ -128,7 +128,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050505] px-4 py-10 text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#050505] px-4 py-6 text-white sm:py-10">
       {apiConfig.googleClientId && (
         <Script
           src="https://accounts.google.com/gsi/client"
@@ -140,14 +140,14 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.015)_0,transparent_20%,rgba(255,255,255,0.015)_40%,transparent_68%,rgba(255,255,255,0.015)_100%)] opacity-30" />
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-[6%] top-[8%]">
+        <div className="absolute left-4 top-4 sm:left-[6%] sm:top-[8%]">
           <Logo size="lg" />
         </div>
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="absolute inset-0 flex items-center justify-start pl-[4%] pr-[46%]"
+          className="absolute inset-0 hidden items-center justify-start pl-[4%] pr-[46%] lg:flex"
         >
           <IncentraEye
             mode="track"
@@ -160,14 +160,14 @@ Because every scene has a story and great stories deserve more than just play an
         </motion.div>
       </div>
 
-      <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-7xl items-center gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-7xl items-center gap-6 pt-16 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:pt-0">
         <div />
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.08 }}
         >
-          <Card className="border-white/8 bg-[linear-gradient(180deg,rgba(16,16,16,0.94),rgba(7,7,7,0.98))] p-8 text-white shadow-[0_25px_80px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+          <Card className="border-white/8 bg-[linear-gradient(180deg,rgba(16,16,16,0.94),rgba(7,7,7,0.98))] p-5 text-white shadow-[0_25px_80px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:p-8">
             <p className="text-xs uppercase tracking-[0.35em] text-red-200/60">
               Credentials
             </p>
@@ -176,7 +176,7 @@ Because every scene has a story and great stories deserve more than just play an
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease: 'easeOut' }}
-                className="login-robotic relative min-h-[1.2em] whitespace-nowrap text-5xl text-white"
+                className="login-robotic relative min-h-[1.2em] max-w-full text-3xl leading-none text-white sm:whitespace-nowrap sm:text-5xl"
               >
                 {typedHeadline}
                 <motion.span

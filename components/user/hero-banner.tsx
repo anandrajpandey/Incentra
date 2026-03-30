@@ -178,7 +178,7 @@ export function HeroBanner({
           <button
             type="button"
             onClick={togglePreviewAudio}
-            className="absolute bottom-24 right-4 z-20 text-white/78 transition hover:text-white sm:right-6 md:bottom-36 md:right-10 lg:bottom-36 lg:right-14 2xl:bottom-36 2xl:right-20"
+            className="absolute bottom-28 right-4 z-20 text-white/78 transition hover:text-white sm:right-6 md:bottom-36 md:right-10 lg:bottom-36 lg:right-14 2xl:bottom-36 2xl:right-20"
             aria-label={previewMuted ? "Unmute preview" : "Mute preview"}
           >
             {previewMuted ? (
@@ -189,8 +189,8 @@ export function HeroBanner({
           </button>
         ) : null}
 
-        <div className="relative z-10 flex min-h-[calc(100vh-4rem)] items-end px-4 py-8 sm:px-6 sm:py-10 md:px-10 lg:px-14 2xl:px-20">
-          <div className="max-w-2xl pb-20 sm:pb-24">
+        <div className="relative z-10 flex min-h-[calc(100vh-4rem)] items-end px-4 py-8 pb-3 sm:px-6 sm:py-10 md:px-10 lg:px-14 2xl:px-20">
+          <div className="max-w-2xl pb-10 sm:pb-24">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs uppercase tracking-[0.35em] text-primary">
               <Sparkles className="h-3.5 w-3.5" />
               Featured Premiere
@@ -241,8 +241,8 @@ export function HeroBanner({
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-4 sm:px-6 sm:pb-5 md:px-10 lg:px-14 2xl:px-20">
-          <div className="flex flex-col gap-4 border-t border-white/10 pt-5 text-white md:flex-row md:items-end md:justify-between">
+        <div className="relative z-10 mt-4 px-4 pb-4 sm:px-6 sm:pb-5 md:absolute md:bottom-0 md:left-0 md:right-0 md:mt-0 md:px-10 lg:px-14 2xl:px-20">
+          <div className="flex flex-col gap-4 border-t border-white/10 pt-4 text-white md:pt-5 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.35em] text-red-200/70">
                 {kicker ?? "Picked For Tonight"}
